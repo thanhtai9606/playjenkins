@@ -1,20 +1,15 @@
+
 pipeline {
 
   environment {
-    registry = "192.168.1.81:5000/justme/myweb"
+    registry = "ltdungc50/demo_cd"
+    registryCredential = 'dockerhub_id'
     dockerImage = ""
   }
 
-  agent any
+  agent { label 'jenkins-linux' }
 
   stages {
-
-    stage('Checkout Source') {
-      steps {
-        git 'https://github.com/justmeandopensource/playjenkins.git'
-      }
-    }
-
     stage('Build image') {
       steps{
         script {
@@ -32,6 +27,16 @@ pipeline {
         }
       }
     }
+    stage('Deploy our image') {
+            steps{
+                script {
+                        docker.withRegistry( '', registryCredential ) {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+    }
 
     stage('Deploy App') {
       steps {
@@ -40,7 +45,12 @@ pipeline {
         }
       }
     }
-
+    stage('Cleaning up') {
+        steps{
+                sh "docker rmi $registry:$BUILD_NUMBER"
+            }
+        }
+    }      
   }
 
 }
